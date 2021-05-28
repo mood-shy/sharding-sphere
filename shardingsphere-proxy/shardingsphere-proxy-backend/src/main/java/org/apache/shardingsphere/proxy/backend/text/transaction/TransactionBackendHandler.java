@@ -22,55 +22,55 @@ import org.apache.shardingsphere.proxy.backend.communication.jdbc.transaction.Ba
 import org.apache.shardingsphere.proxy.backend.response.header.ResponseHeader;
 import org.apache.shardingsphere.proxy.backend.response.header.update.UpdateResponseHeader;
 import org.apache.shardingsphere.proxy.backend.text.TextProtocolBackendHandler;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.ReleaseSavepointStatement;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.RollbackToSavepointStatement;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.SavepointStatement;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.TCLStatement;
-import org.apache.shardingsphere.transaction.core.TransactionOperationType;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.*;
 
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 
 /**
  * Do transaction operation.
  */
 public final class TransactionBackendHandler implements TextProtocolBackendHandler {
-    
+
     private final TCLStatement tclStatement;
-    
-    private final TransactionOperationType operationType;
-    
+
     private final BackendTransactionManager backendTransactionManager;
-    
-    public TransactionBackendHandler(final TCLStatement tclStatement, final TransactionOperationType operationType, final BackendConnection backendConnection) {
+
+    private final boolean isInTransaction;
+
+    public TransactionBackendHandler(final TCLStatement tclStatement, final BackendConnection backendConnection) {
         this.tclStatement = tclStatement;
-        this.operationType = operationType;
         backendTransactionManager = new BackendTransactionManager(backendConnection);
+        this.isInTransaction = backendConnection.getTransactionStatus().isInTransaction();
     }
-    
+
     @Override
     public ResponseHeader execute() throws SQLException {
-        switch (operationType) {
-            case BEGIN:
-                backendTransactionManager.begin();
-                break;
-            case SAVEPOINT:
-                backendTransactionManager.setSavepoint(((SavepointStatement) tclStatement).getSavepointName());
-                break;
-            case ROLLBACK_TO_SAVEPOINT:
-                backendTransactionManager.rollbackTo(((RollbackToSavepointStatement) tclStatement).getSavepointName());
-                break;
-            case RELEASE_SAVEPOINT:
-                backendTransactionManager.releaseSavepoint(((ReleaseSavepointStatement) tclStatement).getSavepointName());
-                break;
-            case COMMIT:
+        if (tclStatement instanceof BeginTransactionStatement) {
+            backendTransactionManager.begin();
+        }
+        if (tclStatement instanceof SetAutoCommitStatement) {
+            SetAutoCommitStatement setAutoCommitStatement = (SetAutoCommitStatement) tclStatement;
+            if (setAutoCommitStatement.isAutoCommit() && isInTransaction) {
                 backendTransactionManager.commit();
-                break;
-            case ROLLBACK:
-                backendTransactionManager.rollback();
-                break;
-            default:
-                throw new SQLFeatureNotSupportedException(operationType.name());
+            }
+            if (!setAutoCommitStatement.isAutoCommit()) {
+                backendTransactionManager.begin();
+            }
+        }
+        if (tclStatement instanceof CommitStatement) {
+            backendTransactionManager.commit();
+        }
+        if (tclStatement instanceof RollbackStatement) {
+            backendTransactionManager.rollback();
+        }
+        if (tclStatement instanceof SavepointStatement) {
+            backendTransactionManager.setSavepoint(((SavepointStatement) tclStatement).getSavepointName());
+        }
+        if (tclStatement instanceof ReleaseSavepointStatement) {
+            backendTransactionManager.releaseSavepoint(((ReleaseSavepointStatement) tclStatement).getSavepointName());
+        }
+        if (tclStatement instanceof RollbackToSavepointStatement) {
+            backendTransactionManager.rollbackTo(((RollbackToSavepointStatement) tclStatement).getSavepointName());
         }
         return new UpdateResponseHeader(tclStatement);
     }

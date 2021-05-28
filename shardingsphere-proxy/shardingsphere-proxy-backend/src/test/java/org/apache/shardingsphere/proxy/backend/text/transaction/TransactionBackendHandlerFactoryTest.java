@@ -22,9 +22,7 @@ import org.apache.shardingsphere.proxy.backend.communication.jdbc.connection.Bac
 import org.apache.shardingsphere.proxy.backend.communication.jdbc.transaction.BackendTransactionManager;
 import org.apache.shardingsphere.proxy.backend.text.TextProtocolBackendHandler;
 import org.apache.shardingsphere.proxy.backend.text.data.impl.BroadcastDatabaseBackendHandler;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.CommitStatement;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.RollbackStatement;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.TCLStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.*;
 import org.apache.shardingsphere.transaction.core.TransactionOperationType;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -32,38 +30,89 @@ import org.mockito.Answers;
 
 import java.lang.reflect.Field;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 public final class TransactionBackendHandlerFactoryTest {
-    
+
+    @Test
+    public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfBeginTransactionStatement() {
+        BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
+        BeginTransactionStatement beginTransactionStatement = mock(BeginTransactionStatement.class);
+        TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(beginTransactionStatement, null, backendConnection);
+        assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
+        TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(BeginTransactionStatement.class));
+        BackendTransactionManager backendTransactionManager = getBackendTransactionManager(transactionBackendHandler);
+        assertFieldOfInstance(backendTransactionManager, "connection", is(backendConnection));
+    }
+
+    @Test
+    public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfSetAutoCommitStatement() {
+        BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
+        TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(mock(SetAutoCommitStatement.class), null, backendConnection);
+        assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
+        TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(SetAutoCommitStatement.class));
+        assertFieldOfInstance(getBackendTransactionManager(transactionBackendHandler), "connection", is(backendConnection));
+    }
+
     @Test
     public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfCommitStatement() {
         BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
         TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(mock(CommitStatement.class), null, backendConnection);
         assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
         TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
-        assertFieldOfInstance(transactionBackendHandler, "operationType", is(TransactionOperationType.COMMIT));
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(CommitStatement.class));
         assertFieldOfInstance(getBackendTransactionManager(transactionBackendHandler), "connection", is(backendConnection));
     }
-    
+
     @Test
     public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfRollbackStatement() {
         BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
         TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(mock(RollbackStatement.class), null, backendConnection);
         assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
         TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
-        assertFieldOfInstance(transactionBackendHandler, "operationType", is(TransactionOperationType.ROLLBACK));
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(RollbackStatement.class));
         assertFieldOfInstance(getBackendTransactionManager(transactionBackendHandler), "connection", is(backendConnection));
     }
-    
+
+    @Test
+    public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfSavepointStatement() {
+        BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
+        TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(mock(SavepointStatement.class), null, backendConnection);
+        assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
+        TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(SavepointStatement.class));
+        assertFieldOfInstance(getBackendTransactionManager(transactionBackendHandler), "connection", is(backendConnection));
+    }
+
+    @Test
+    public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfReleaseSavepointStatement() {
+        BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
+        TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(mock(ReleaseSavepointStatement.class), null, backendConnection);
+        assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
+        TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(ReleaseSavepointStatement.class));
+        assertFieldOfInstance(getBackendTransactionManager(transactionBackendHandler), "connection", is(backendConnection));
+    }
+
+    @Test
+    public void assertTransactionBackendHandlerReturnedWhenTCLStatementInstanceOfRollbackToSavepointStatement() {
+        BackendConnection backendConnection = mock(BackendConnection.class, Answers.RETURNS_DEEP_STUBS);
+        TextProtocolBackendHandler textProtocolBackendHandler = TransactionBackendHandlerFactory.newInstance(mock(RollbackToSavepointStatement.class), null, backendConnection);
+        assertThat(textProtocolBackendHandler, instanceOf(TransactionBackendHandler.class));
+        TransactionBackendHandler transactionBackendHandler = (TransactionBackendHandler) textProtocolBackendHandler;
+        assertFieldOfInstance(transactionBackendHandler, "tclStatement", isA(RollbackToSavepointStatement.class));
+        assertFieldOfInstance(getBackendTransactionManager(transactionBackendHandler), "connection", is(backendConnection));
+    }
+
     @Test
     public void assertBroadcastBackendHandlerReturnedWhenTCLStatementNotHit() {
         assertThat(TransactionBackendHandlerFactory.newInstance(mock(TCLStatement.class), null, null), instanceOf(BroadcastDatabaseBackendHandler.class));
     }
-    
+
     @SuppressWarnings("unchecked")
     @SneakyThrows(ReflectiveOperationException.class)
     private <S, T> void assertFieldOfInstance(final S classInstance, final String fieldName, final Matcher<T> matcher) {
@@ -72,7 +121,7 @@ public final class TransactionBackendHandlerFactoryTest {
         T value = (T) field.get(classInstance);
         assertThat(value, matcher);
     }
-    
+
     @SneakyThrows(ReflectiveOperationException.class)
     private BackendTransactionManager getBackendTransactionManager(final TransactionBackendHandler transactionBackendHandler) {
         Field field = transactionBackendHandler.getClass().getDeclaredField("backendTransactionManager");

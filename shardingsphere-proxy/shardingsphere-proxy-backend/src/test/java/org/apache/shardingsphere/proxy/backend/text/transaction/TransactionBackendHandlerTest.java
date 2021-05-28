@@ -21,7 +21,6 @@ import org.apache.shardingsphere.proxy.backend.communication.jdbc.connection.Bac
 import org.apache.shardingsphere.proxy.backend.response.header.ResponseHeader;
 import org.apache.shardingsphere.proxy.backend.response.header.update.UpdateResponseHeader;
 import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.TCLStatement;
-import org.apache.shardingsphere.transaction.core.TransactionOperationType;
 import org.apache.shardingsphere.transaction.core.TransactionType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,12 +34,12 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public final class TransactionBackendHandlerTest {
-    
+
     private final BackendConnection backendConnection = new BackendConnection(TransactionType.LOCAL);
-    
+
     @Test
     public void assertExecute() throws SQLException {
-        TransactionBackendHandler transactionBackendHandler = new TransactionBackendHandler(mock(TCLStatement.class), TransactionOperationType.BEGIN, backendConnection);
+        TransactionBackendHandler transactionBackendHandler = new TransactionBackendHandler(mock(TCLStatement.class), backendConnection);
         ResponseHeader actual = transactionBackendHandler.execute();
         assertThat(actual, instanceOf(UpdateResponseHeader.class));
     }
