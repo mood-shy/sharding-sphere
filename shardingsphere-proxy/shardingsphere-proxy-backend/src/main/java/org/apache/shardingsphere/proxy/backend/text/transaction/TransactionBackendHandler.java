@@ -22,7 +22,14 @@ import org.apache.shardingsphere.proxy.backend.communication.jdbc.transaction.Ba
 import org.apache.shardingsphere.proxy.backend.response.header.ResponseHeader;
 import org.apache.shardingsphere.proxy.backend.response.header.update.UpdateResponseHeader;
 import org.apache.shardingsphere.proxy.backend.text.TextProtocolBackendHandler;
-import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.*;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.TCLStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.BeginTransactionStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.SetAutoCommitStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.CommitStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.RollbackStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.SavepointStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.ReleaseSavepointStatement;
+import org.apache.shardingsphere.sql.parser.sql.common.statement.tcl.RollbackToSavepointStatement;
 
 import java.sql.SQLException;
 
